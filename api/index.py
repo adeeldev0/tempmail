@@ -19,6 +19,13 @@ def get_session():
 def random_string(length=12):
     return ''.join(random.choices(string.ascii_lowercase + string.digits, k=length))
 
+# Creator Details
+CREATOR = {
+    "name": "Muhammad Adeel Baloch",
+    "tg": "@sigmadev0",
+    "website": "adeelbaloch.dev"
+}
+
 @app.route('/', methods=['GET'])
 def home():
     return jsonify({
@@ -27,8 +34,9 @@ def home():
             "generate_random_email": "/generate",
             "check_messages": "/messages/YOUR_TOKEN_HERE"
         },
-        "created_by": "Muhammad Adeel Baloch",
-        "location": "Lahore, Pakistan",
+        "created_by": CREATOR["name"],
+        "tg": CREATOR["tg"],
+        "website": CREATOR["website"],
         "note": "Free Temporary Mail API using mail.tm - Har baar nayi random email"
     })
 
@@ -76,8 +84,9 @@ def generate_random_email():
             "password": password,
             "token": token,
             "message": "Email ready! Use this email for signup on any website.",
-            "created_by": "Muhammad Adeel Baloch",
-            "location": "Lahore, Pakistan",
+            "created_by": CREATOR["name"],
+            "tg": CREATOR["tg"],
+            "website": CREATOR["website"],
             "note": "To check received emails (OTP etc.), use /messages/YOUR_TOKEN"
         })
 
@@ -102,13 +111,15 @@ def get_messages(token):
             "status": "success",
             "total_emails": data.get("hydra:totalItems", 0),
             "messages": data.get("hydra:member", []),
-            "created_by": "Muhammad Adeel Baloch (Lahore, Pakistan)",
+            "created_by": CREATOR["name"],
+            "tg": CREATOR["tg"],
+            "website": CREATOR["website"],
             "note": "If total_emails is 0, wait 10-30 seconds and refresh. Email aa raha hoga."
         })
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
 
-# This is required for Vercel Python runtime
+# Required for Vercel Python runtime
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
