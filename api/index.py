@@ -4,11 +4,10 @@ from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 import random
 import string
-import time
 
 app = Flask(__name__)
 
-# Retry setup for better connection handling
+# Retry setup for better reliability
 def get_session():
     session = requests.Session()
     retry = Retry(total=5, backoff_factor=1.5, status_forcelist=[429, 500, 502, 503, 504])
@@ -20,11 +19,24 @@ def get_session():
 def random_string(length=12):
     return ''.join(random.choices(string.ascii_lowercase + string.digits, k=length))
 
+@app.route('/', methods=['GET'])
+def home():
+    return jsonify({
+        "message": "Temp Mail API is Running Successfully",
+        "endpoints": {
+            "generate_random_email": "/generate",
+            "check_messages": "/messages/YOUR_TOKEN_HERE"
+        },
+        "created_by": "Muhammad Adeel Baloch",
+        "location": "Lahore, Pakistan",
+        "note": "Free Temporary Mail API using mail.tm - Har baar nayi random email"
+    })
+
 @app.route('/generate', methods=['GET'])
 def generate_random_email():
     session = get_session()
     try:
-        # Get domains
+        # Get available domains
         domains_resp = session.get("https://api.mail.tm/domains", timeout=20)
         domains_resp.raise_for_status()
         domains = [item['domain'] for item in domains_resp.json().get('hydra:member', [])]
@@ -63,16 +75,16 @@ def generate_random_email():
             "email": email,
             "password": password,
             "token": token,
-            "message": "Email ready! Use it for signup on any site.",
+            "message": "Email ready! Use this email for signup on any website.",
             "created_by": "Muhammad Adeel Baloch",
-            "location": "Pakistan",
-            "note": "This is a temporary mail API"
+            "location": "Lahore, Pakistan",
+            "note": "To check received emails (OTP etc.), use /messages/YOUR_TOKEN"
         })
 
     except requests.exceptions.ConnectionError:
-        return jsonify({"error": "Connection failed to mail.tm server. Try using VPN."}), 503
+        return jsonify({"error": "Connection failed to mail.tm. Please use VPN and try again."}), 503
     except requests.exceptions.Timeout:
-        return jsonify({"error": "Request timed out. Please try again later."}), 504
+        return jsonify({"error": "Request timed out. Try again later or use VPN."}), 504
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -88,21 +100,15 @@ def get_messages(token):
         
         return jsonify({
             "status": "success",
-            "total": data.get("hydra:totalItems", 0),
+            "total_emails": data.get("hydra:totalItems", 0),
             "messages": data.get("hydra:member", []),
-            "created_by": "Muhammad Adeel Baloch"
+            "created_by": "Muhammad Adeel Baloch (Lahore, Pakistan)",
+            "note": "If total_emails is 0, wait 10-30 seconds and refresh. Email aa raha hoga."
         })
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
 
-# Optional: Root route for info
-@app.route('/', methods=['GET'])
-def home():
-    return jsonify({
-        "message": "Temp Mail API is running",
-        "endpoints": {
-            "generate": "/generate",
-            "messages": "/messages/YOUR_TOKEN"
-        },
-        "created_by": "Muhammad Adeel Baloch - Pakistan    })
+# This is required for Vercel Python runtime
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000)
