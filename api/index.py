@@ -7,7 +7,7 @@ import string
 
 app = Flask(__name__)
 
-# Retry setup for better reliability
+# Retry setup
 def get_session():
     session = requests.Session()
     retry = Retry(total=5, backoff_factor=1.5, status_forcelist=[429, 500, 502, 503, 504])
@@ -19,25 +19,28 @@ def get_session():
 def random_string(length=12):
     return ''.join(random.choices(string.ascii_lowercase + string.digits, k=length))
 
-# Creator Details
+# Your Details
 CREATOR = {
     "name": "Muhammad Adeel Baloch",
     "tg": "@sigmadev0",
     "website": "adeelbaloch.dev"
 }
 
+DOMAIN = "https://adeelmail.vercel.app"
+
 @app.route('/', methods=['GET'])
 def home():
     return jsonify({
-        "message": "Temp Mail API is Running Successfully",
+        "message": "Temporary Email API is Running Successfully",
+        "domain": DOMAIN,
         "endpoints": {
             "generate_random_email": "/generate",
             "check_messages": "/messages/YOUR_TOKEN_HERE"
         },
         "created_by": CREATOR["name"],
-        "tg": CREATOR["tg"],
+        "telegram": CREATOR["tg"],
         "website": CREATOR["website"],
-        "note": "Free Temporary Mail API using mail.tm - Har baar nayi random email"
+        "note": "Free random temporary email service"
     })
 
 @app.route('/generate', methods=['GET'])
@@ -83,17 +86,19 @@ def generate_random_email():
             "email": email,
             "password": password,
             "token": token,
-            "message": "Email ready! Use this email for signup on any website.",
+            "message": "Your temporary email is ready. Use it for any registration or signup.",
             "created_by": CREATOR["name"],
-            "tg": CREATOR["tg"],
+            "telegram": CREATOR["tg"],
             "website": CREATOR["website"],
-            "note": "To check received emails (OTP etc.), use /messages/YOUR_TOKEN"
+            "domain": DOMAIN,
+            "how_to_check": f"To check emails (OTP, verification etc.), visit: {DOMAIN}/messages/{token}",
+            "note": "If no emails appear, wait 10-30 seconds and refresh the page."
         })
 
     except requests.exceptions.ConnectionError:
-        return jsonify({"error": "Connection failed to mail.tm. Please use VPN and try again."}), 503
+        return jsonify({"error": "Connection failed. Please use VPN and try again."}), 503
     except requests.exceptions.Timeout:
-        return jsonify({"error": "Request timed out. Try again later or use VPN."}), 504
+        return jsonify({"error": "Request timed out. Try again later."}), 504
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -112,14 +117,15 @@ def get_messages(token):
             "total_emails": data.get("hydra:totalItems", 0),
             "messages": data.get("hydra:member", []),
             "created_by": CREATOR["name"],
-            "tg": CREATOR["tg"],
+            "telegram": CREATOR["tg"],
             "website": CREATOR["website"],
-            "note": "If total_emails is 0, wait 10-30 seconds and refresh. Email aa raha hoga."
+            "domain": DOMAIN,
+            "note": "If total_emails is 0, wait a few seconds and refresh. New emails appear automatically."
         })
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
 
-# Required for Vercel Python runtime
+# Required for Vercel
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
